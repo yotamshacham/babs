@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+
+        <title>Babylon.js sample code</title>
+
+        <!-- Babylon.js -->
+        <script src="https://code.jquery.com/pep/0.4.2/pep.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.6.2/dat.gui.min.js"></script>
+        <script src="https://preview.babylonjs.com/ammo.js"></script>
+        <script src="https://preview.babylonjs.com/cannon.js"></script>
+        <script src="https://preview.babylonjs.com/Oimo.js"></script>
+        <script src="https://preview.babylonjs.com/libktx.js"></script>
+        <script src="https://preview.babylonjs.com/earcut.min.js"></script>
+        <script src="https://preview.babylonjs.com/babylon.js"></script>
+        <script src="https://preview.babylonjs.com/inspector/babylon.inspector.bundle.js"></script>
+        <script src="https://preview.babylonjs.com/materialsLibrary/babylonjs.materials.min.js"></script>
+        <script src="https://preview.babylonjs.com/proceduralTexturesLibrary/babylonjs.proceduralTextures.min.js"></script>
+        <script src="https://preview.babylonjs.com/postProcessesLibrary/babylonjs.postProcess.min.js"></script>
+        <script src="https://preview.babylonjs.com/loaders/babylonjs.loaders.js"></script>
+        <script src="https://preview.babylonjs.com/serializers/babylonjs.serializers.min.js"></script>
+        <script src="https://preview.babylonjs.com/gui/babylon.gui.min.js"></script>
+
+        <style>
+            html, body {
+                overflow: hidden;
+                width: 100%;
+                height: 100%;
+                margin: 0;
+                padding: 0;
+            }
+
+            #renderCanvas {
+                width: 100%;
+                height: 100%;
+                touch-action: none;
+            }
+        </style>
+    </head>
+<body>
+    <canvas id="renderCanvas"></canvas>
+    <script>
+        var canvas = document.getElementById("renderCanvas");
+
+        var engine = null;
+        var scene = null;
+        var sceneToRender = null;
+        var createDefaultEngine = function() { return new BABYLON.Engine(canvas, true, { preserveDrawingBuffer: true, stencil: true }); };
+        var createScene = async function () {
+        
+            // This creates a basic Babylon Scene object (non-mesh)
+            var scene = new BABYLON.Scene(engine);
+        
+            // This creates and positions a free camera (non-mesh)
+            var camera = new BABYLON.FreeCamera("camera1", new BABYLON.Vector3(0, 5, -5), scene);
+        
+            // This targets the camera to scene origin
+            camera.setTarget(BABYLON.Vector3.Zero());
+        
+            // This attaches the camera to the canvas
+            camera.attachControl(canvas, true);
+        
+            // This creates a light, aiming 0,1,0 - to the sky (non-mesh)
+            var light = new BABYLON.HemisphericLight("light", new BABYLON.Vector3(0, 1, 0), scene);
+        
+            // Default intensity is 1. Let's dim the light a small amount
+            light.intensity = 0.7;
+        
+            // Our built-in 'sphere' shape.
+            var sphere = BABYLON.MeshBuilder.CreateSphere("sphere", {diameter: 1.4, segments: 32}, scene);
+        
+            // Move the sphere upward 1/2 its height
+            sphere.position.y = 1;
+        
+            sphere.material = new BABYLON.StandardMaterial("sphereMat", scene);
+        
+            const environment = scene.createDefaultEnvironment();
+        
+            // GUI
+            var plane = BABYLON.Mesh.CreatePlane("plane", 1);
+            plane.position = new BABYLON.Vector3(1.4, 1.5, 0.4)
+            var advancedTexture = BABYLON.GUI.AdvancedDynamicTexture.CreateForMesh(plane);
+            var panel = new BABYLON.GUI.StackPanel();    
+            advancedTexture.addControl(panel);  
+            var header = new BABYLON.GUI.TextBlock();
+            header.text = "Color GUI";
+            header.height = "100px";
+            header.color = "white";
+            header.textHorizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
+            header.fontSize = "120"
+            panel.addControl(header); 
+            var picker = new BABYLON.GUI.ColorPicker();
+            picker.value = sphere.material.diffuseColor;
+            picker.horizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
+            picker.height = "350px";
+            picker.width = "350px";
+            picker.onValueChangedObservable.add(function(value) {
+                sphere.material.diffuseColor.copyFrom(value);
+            });
+            panel.addControl(picker);
+        
+            // XR
+            const xrHelper = await scene.createDefaultXRExperienceAsync({
+                floorMeshes: [environment.ground]
+            });
+        
+            return scene;
+        
+        };
+        
+        engine = createDefaultEngine();
+        if (!engine) throw 'engine should not be null.';
+        scene = createScene();;
+        scene.then(returnedScene => { sceneToRender = returnedScene; });
+        
+
+        engine.runRenderLoop(function () {
+            if (sceneToRender) {
+                sceneToRender.render();
+            }
+        });
+
+        // Resize
+        window.addEventListener("resize", function () {
+            engine.resize();
+        });
+    </script>
+</body>
+</html>
